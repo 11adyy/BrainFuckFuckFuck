@@ -12,6 +12,7 @@
 #define STDOUT_CHAR         ','
 
 /* ++ */
+#define COMMENT_CHAR        '/'
 #define TERMINATE_CHAR      '!'
 #define IF_CHAR             '?'
 #define JUMP_CHAR           '^'
