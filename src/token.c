@@ -1,0 +1,12 @@
+#include <token.h>
+
+void set_tokenizer(char* buffer, unsigned int bsize, token_line_t* tl) {
+    tl->buffer = buffer;
+    tl->buffer_size = bsize;
+    tl->pos = 0;
+}
+
+char get_next_token(token_line_t* tl) {
+    if (tl->pos++ >= tl->buffer_size) return -1;
+    return tl->buffer[tl->pos];
+}
