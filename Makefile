@@ -1,6 +1,6 @@
 CC      := gcc
 TARGET  := out
-SRC     := main.c
+SRC     := main.c src/*
 INCLUDE := include
 
 CFLAGS := \
@@ -20,7 +20,8 @@ CFLAGS += \
 	-Wextra \
 	-Wpedantic \
 	-Wshadow \
-	-Wconversion
+	-Wconversion \
+	# -DDEBUG
 
 LDFLAGS := -flto
 

@@ -1,6 +1,8 @@
 #ifndef TOKEN_H_
 #define TOKEN_H_
 
+#include <debug.h>
+
 typedef struct {
     char* buffer;
     int   buffer_size;

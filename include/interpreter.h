@@ -3,22 +3,31 @@
 
 #include <hard.h>
 #include <dict.h>
+#include <debug.h>
 #include <token.h>
 
 #define LINE_SIZE   10000
 #define LABELS_SIZE 25
 
 typedef struct {
-    io_t     io;
+    io_t         io;
+    token_line_t tokenizer;
 
-    int      line_pos;
-    char     line[LINE_SIZE];
-    int      labels[LABELS_SIZE];
-    FILE*    fp;
+    int          pos;
+    char         line[LINE_SIZE];
+    int          labels[LABELS_SIZE];
+    FILE*        fp;
 
     struct {
-        char jmp;
-        char cmt;
+        int      raddr; /* Function's return address  */
+        int      farg;  /* Function's first argument  */
+        int      sarg;  /* Function's second argument */
+        int      targ;  /* Function's third argument  */
+    } func;
+
+    struct {
+        char     jmp;
+        char     cmt;
     } flags;
 } interpret_t;
 

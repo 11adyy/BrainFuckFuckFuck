@@ -17,4 +17,9 @@
 #define IF_CHAR             '?'
 #define JUMP_CHAR           '^'
 
+#define CALL_CHAR           '&'
+#define FARG_CHAR           '1'
+#define SARG_CHAR           '2'
+#define TARG_CHAR           '3'
+
 #endif

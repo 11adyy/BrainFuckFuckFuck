@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    setup_interpret(&inter);
     interpret(&inter);
 
     fclose(fp);
