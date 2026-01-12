@@ -15,14 +15,14 @@ typedef struct {
 
     int          pos;
     char         line[LINE_SIZE];
+    char         code[LINE_SIZE];
+    int          brackets[LINE_SIZE];
     int          labels[LABELS_SIZE];
     FILE*        fp;
 
     struct {
         int      raddr; /* Function's return address  */
-        int      farg;  /* Function's first argument  */
-        int      sarg;  /* Function's second argument */
-        int      targ;  /* Function's third argument  */
+        int      args[10];
     } func;
 
     struct {

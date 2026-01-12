@@ -1,8 +1,8 @@
 #include <token.h>
 
-void set_tokenizer(char* buffer, unsigned int bsize, token_line_t* tl) {
+void set_tokenizer(char* buffer, unsigned short bsize, token_line_t* tl) {
     tl->buffer = buffer;
-    tl->buffer_size = (int)bsize;
+    tl->buffer_size = bsize;
     tl->pos = -1;
 }
 
