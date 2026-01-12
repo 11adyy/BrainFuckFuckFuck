@@ -1,8 +1,7 @@
 #include <interpreter.h>
 
 static int _putc(int c) { return putc(c, stdout); }
-static int _getc() { return getc(stdin); }
-
+static int _getc()      { return getc(stdin);     }
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         fprintf(stderr, "You must provide the target file: ./%s <path>\n", argv[0]);
@@ -26,7 +25,6 @@ int main(int argc, char* argv[]) {
     if ((inter.code_size = fread(inter.code, 1, sizeof(inter.code), fp)) <= 0) return 1;
     setup_interpret(&inter);
     interpret(&inter);
-
     fclose(fp);
     return 0;
 }

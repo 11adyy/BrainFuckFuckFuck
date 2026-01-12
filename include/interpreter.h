@@ -1,14 +1,18 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 
-#include <io.h>
-#include <dict.h>
+#include <stdio.h>
 #include <debug.h>
 #include <token.h>
 
 #define LINE_SIZE   10000
 #define LABELS_SIZE 25
 #define SCOPE_STACK 10
+
+typedef struct {
+    int (*putc)(int);
+    int (*getc)();
+} io_t;
 
 typedef struct {
     long raddr;   /* Function's return address */

@@ -24,9 +24,8 @@ void setup_interpret(interpret_t* inter) {
 }
 
 void interpret(interpret_t* inter) {
-    set_tokenizer(inter->code, inter->code_size, &inter->tokenizer);
-
     char curr;
+    set_tokenizer(inter->code, inter->code_size, &inter->tokenizer);
     while ((curr = get_next_token(&inter->tokenizer))) {
         if (inter->flags.jmp) {
             if (curr - 'a' == inter->flags.jmp) inter->flags.jmp = 0;
@@ -55,13 +54,10 @@ void interpret(interpret_t* inter) {
                 continue;
             }
             case TERMINATE_CHAR: {
-                if (inter->func_scope > 0) {
-                    inter->tokenizer.pos = inter->funcs[inter->func_scope - 1].raddr;
-                    inter->funcs[--inter->func_scope].raddr = 0;
-                    continue;
-                }
-
-                goto _terminate;
+                if (!inter->func_scope) return;
+                inter->tokenizer.pos = inter->funcs[inter->func_scope - 1].raddr;
+                inter->funcs[--inter->func_scope].raddr = 0;
+                continue;
             }
             case CALL_CHAR: {
                 curr = get_next_token(&inter->tokenizer);
@@ -95,5 +91,4 @@ void interpret(interpret_t* inter) {
 _move_next_with_label_reg: {}
         if (curr >= 'a' && curr <= 'z') inter->labels[curr - 'a'] = inter->tokenizer.pos;
     }
-_terminate: {}
 }
