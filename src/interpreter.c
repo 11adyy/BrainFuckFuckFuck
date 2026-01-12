@@ -1,28 +1,33 @@
 #include <interpreter.h>
 
 void setup_interpret(interpret_t* inter) {
-    for (int i = 0; i < LABELS_SIZE; i++)   inter->labels[i] = -1;
-    for (int i = 0; i < LINE_SIZE / 4; i++) ((int*)(inter->line))[i] = 0;
-    for (int i = 0; i < LINE_SIZE / 4; i++) ((int*)(inter->code))[i] = 0;
-    for (int i = 0; i < LINE_SIZE; i++)     inter->brackets[i] = 0;
-    inter->flags.cmt  = 0;
-    inter->flags.jmp  = 0;
-    inter->func.raddr = 0;
+    for (int i = 0; i < LABELS_SIZE; i++) inter->labels[i] = -1;
+
+    short stack_pos = 0;
+    unsigned int stack[LINE_SIZE] = { 0 };
+    for (unsigned int i = 0; i < inter->code_size; i++) {
+        switch (inter->code[i]) {
+            case LOOP_INIT_CHAR: {
+                stack[stack_pos++] = i;
+                break;
+            }
+            case LOOP_CLOSE_CHAR: {
+                if (stack_pos > 0) {
+                    inter->brackets[i] = stack[--stack_pos];
+                    inter->brackets[stack[stack_pos]] = i;
+                }
+
+                break;
+            }
+        }
+    }
 }
 
 void interpret(interpret_t* inter) {
-    size_t n;
-    if ((n = fread(inter->code, 1, sizeof(inter->code), inter->fp)) <= 0) return;
-    set_tokenizer(inter->code, (unsigned short)n, &inter->tokenizer);
+    set_tokenizer(inter->code, inter->code_size, &inter->tokenizer);
 
     char curr;
     while ((curr = get_next_token(&inter->tokenizer))) {
-        print_debug(
-            "Command=%c, pos=%i\nFlags:\ncmt=%i;\njmp=%i;\n", 
-            curr, inter->tokenizer.pos, inter->flags.cmt, inter->flags.jmp
-        );
-        debug_wait();
-
         if (inter->flags.jmp) {
             if (curr - 'a' == inter->flags.jmp) inter->flags.jmp = 0;
             goto _move_next_with_label_reg;
@@ -40,10 +45,19 @@ void interpret(interpret_t* inter) {
             case STDIN_CHAR: inter->line[inter->pos] = (char)inter->io.getc(); continue;
             case INCREMENT_CHAR: inter->line[inter->pos]++;                    continue; 
             case DECREMENT_CHAR: inter->line[inter->pos]--;                    continue;
+            case RESET_CELL: inter->line[inter->pos] = 0;                      continue;
+            case LOOP_INIT_CHAR: {
+                if (!inter->line[inter->pos]) inter->tokenizer.pos = inter->brackets[inter->tokenizer.pos];
+                continue;
+            }
+            case LOOP_CLOSE_CHAR: {
+                if (inter->line[inter->pos]) inter->tokenizer.pos = inter->brackets[inter->tokenizer.pos];
+                continue;
+            }
             case TERMINATE_CHAR: {
-                if (inter->func.raddr) {
-                    inter->tokenizer.pos = inter->func.raddr;
-                    inter->func.raddr = 0;
+                if (inter->func_scope > 0) {
+                    inter->tokenizer.pos = inter->funcs[inter->func_scope - 1].raddr;
+                    inter->funcs[--inter->func_scope].raddr = 0;
                     continue;
                 }
 
@@ -51,19 +65,16 @@ void interpret(interpret_t* inter) {
             }
             case CALL_CHAR: {
                 curr = get_next_token(&inter->tokenizer);
-                inter->func.raddr = inter->tokenizer.pos;
+                inter->funcs[inter->func_scope++].raddr = inter->tokenizer.pos;
                 inter->tokenizer.pos = inter->labels[curr - 'a'];
                 continue;
             }
-            case IF_CHAR: {
-                if (inter->line[inter->pos]) goto _force_jump;
-                else {
-                    get_next_token(&inter->tokenizer);
-                    goto _force_jump;
-                }
+            case GET_ARG: {
+                curr = get_next_token(&inter->tokenizer);
+                if (curr >= '0' && curr <= '9') inter->line[inter->pos] = inter->funcs[inter->func_scope - 1].args[curr - '0'];
+                continue;
             }
             case JUMP_CHAR: {
-_force_jump: {}
                 curr = get_next_token(&inter->tokenizer);
                 if (inter->labels[curr - 'a'] >= 0) {
                     inter->tokenizer.pos = inter->labels[curr - 'a'];
@@ -80,16 +91,9 @@ _force_jump: {}
             default: break;
         }
 
-        if (curr >= '0' && curr <= '9') {
-            print_debug("Registered argument='%c' for a position at='%i'\n", curr - '0', inter->line[inter->pos]);
-            inter->func.args[curr - '0'] = inter->line[inter->pos];
-        }
+        if (curr >= '0' && curr <= '9') inter->funcs[inter->func_scope].args[curr - '0'] = inter->line[inter->pos];
 _move_next_with_label_reg: {}
-        
-        if (curr >= 'a' && curr <= 'z') {
-            print_debug("Registered label='%c' for a position at='%i'\n", curr, inter->tokenizer.pos);
-            inter->labels[curr - 'a'] = inter->tokenizer.pos;
-        }
+        if (curr >= 'a' && curr <= 'z') inter->labels[curr - 'a'] = inter->tokenizer.pos;
     }
 _terminate: {}
 }

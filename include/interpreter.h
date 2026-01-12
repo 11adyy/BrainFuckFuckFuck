@@ -1,33 +1,39 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 
-#include <hard.h>
+#include <io.h>
 #include <dict.h>
 #include <debug.h>
 #include <token.h>
 
 #define LINE_SIZE   10000
 #define LABELS_SIZE 25
+#define SCOPE_STACK 10
 
 typedef struct {
-    io_t         io;
-    token_line_t tokenizer;
+    long raddr;   /* Function's return address */
+    int args[10]; /* Function's 10 arguments   */
+} func_t;
 
-    int          pos;
-    char         line[LINE_SIZE];
-    char         code[LINE_SIZE];
-    int          brackets[LINE_SIZE];
-    int          labels[LABELS_SIZE];
-    FILE*        fp;
-
+typedef struct {
+    io_t          io; 
+    token_line_t  tokenizer; 
+    /* Data tape information */
+    int           pos;
+    int           line[LINE_SIZE];
+    /* Source code information */
+    unsigned long code_size;
+    char          code[LINE_SIZE];
+    /* Brackets & Labels information */
+    unsigned int  brackets[LINE_SIZE];
+    long          labels[LABELS_SIZE];
+    /* Functions information */
+    int           func_scope;
+    func_t        funcs[SCOPE_STACK];
+    /* Flags information */
     struct {
-        int      raddr; /* Function's return address  */
-        int      args[10];
-    } func;
-
-    struct {
-        char     jmp;
-        char     cmt;
+        char      jmp;
+        char      cmt;
     } flags;
 } interpret_t;
 

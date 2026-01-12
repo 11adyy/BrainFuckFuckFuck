@@ -4,8 +4,19 @@
    /
 ^q
 w
-+++++++++++++++++++++++++++++++++++++++++++++++++
+  #0            / load the base offset      /
+  >++++++++     / In the second cell set 8  /
+  [
+      <++++++++ / + 8 to the base offset    /
+      >-
+  ]
+  <.            / stdout                    /
 !
 q
 
-&w,>&w,!
+*++0   / B       /
+&w     / w('B'); /
+*+++0  / C       /
+&w     / w('C'); /
+*++++0 / D       /
+&w     / w('D'); /

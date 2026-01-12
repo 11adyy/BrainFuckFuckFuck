@@ -1,12 +1,7 @@
 #include <interpreter.h>
 
-static int _putc(int c) {
-    return putc(c, stdout);
-}
-
-static int _getc() {
-    return getc(stdin);
-}
+static int _putc(int c) { return putc(c, stdout); }
+static int _getc() { return getc(stdin); }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -21,13 +16,14 @@ int main(int argc, char* argv[]) {
     }
     
     interpret_t inter = {
-        .fp = fp,
+        .tokenizer = { 0 }, .flags = { 0 }, .funcs = { 0 }, .code = { 0 }, .brackets = { 0 }, .func_scope = 0,
         .io = (io_t){
             .getc = _getc,
             .putc = _putc
-        }
+        },
     };
 
+    if ((inter.code_size = fread(inter.code, 1, sizeof(inter.code), fp)) <= 0) return 1;
     setup_interpret(&inter);
     interpret(&inter);
 
