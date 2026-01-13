@@ -1,0 +1,18 @@
+^m / jump to main /
+
+a / a(): read 1 byte and add it to cell0; return at cell0 /
+  >,            / input -> cell1          /
+  [<+>-]        / move cell1 -> cell0     /
+  <             / back to cell0           /
+!
+s / s(): sum N bytes, print sum + '\n', clear acc; return at cell0 /
+  >>*           / cell2 = 0 (counter)     /
+  #0            / load N into cell2       /
+  [<<&a>>-]     / N times: call a(); dec  /
+  <<.           / print sum               /
+  >*++++++++++. / print newline (10)      /
+  <*            / clear accumulator       /
+!
+m / main /
+  *++++++++++0  / arg0 = 10               /
+  &s&s&s

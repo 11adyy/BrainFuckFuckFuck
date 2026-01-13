@@ -7,6 +7,6 @@ void set_tokenizer(char* buffer, unsigned long bsize, token_line_t* tl) {
 }
 
 char get_next_token(token_line_t* tl) {
-    if (tl->pos++ >= (long)tl->buffer_size) return -1;
+    if (++tl->pos >= (long)tl->buffer_size) return -1;
     return tl->buffer[tl->pos];
 }

@@ -26,15 +26,15 @@ void setup_interpret(interpret_t* inter) {
 void interpret(interpret_t* inter) {
     char curr;
     set_tokenizer(inter->code, inter->code_size, &inter->tokenizer);
-    while ((curr = get_next_token(&inter->tokenizer))) {
-        if (inter->flags.jmp) {
-            if (curr - 'a' == inter->flags.jmp) inter->flags.jmp = 0;
-            goto _move_next_with_label_reg;
-        }
-
+    while ((curr = get_next_token(&inter->tokenizer)) >= 0) {
         if (inter->flags.cmt) {
             if (curr == COMMENT_CHAR) inter->flags.cmt = 0;
             continue;
+        }
+
+        if (inter->flags.jmp) {
+            if (curr - 'a' == inter->flags.jmp) inter->flags.jmp = 0;
+            goto _move_next_with_label_reg;
         }
 
         switch (curr) {
@@ -67,6 +67,7 @@ void interpret(interpret_t* inter) {
             }
             case GET_ARG: {
                 curr = get_next_token(&inter->tokenizer);
+                if (inter->func_scope <= 0) continue;
                 if (curr >= '0' && curr <= '9') inter->line[inter->pos] = inter->funcs[inter->func_scope - 1].args[curr - '0'];
                 continue;
             }
