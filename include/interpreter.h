@@ -15,16 +15,19 @@ typedef struct {
 } io_t;
 
 typedef struct {
-    long raddr;   /* Function's return address */
-    int args[10]; /* Function's 10 arguments   */
+    /* Basic function information */
+    long raddr;    /* Function's return address */
+    int  args[10]; /* Function's 10 arguments   */
+    int  ret;
+
+    /* Data tape information      */
+    int  pos;
+    int  line[LINE_SIZE];
 } func_t;
 
 typedef struct {
     io_t          io; 
     token_line_t  tokenizer; 
-    /* Data tape information */
-    int           pos;
-    int           line[LINE_SIZE];
     /* Source code information */
     unsigned long code_size;
     char          code[LINE_SIZE];
@@ -37,7 +40,7 @@ typedef struct {
     /* Flags information */
     struct {
         char      jmp;
-        char      cmt;
+        char      cmt : 1;
     } flags;
 } interpret_t;
 

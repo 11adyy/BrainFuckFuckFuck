@@ -21,6 +21,9 @@
 
 #define CALL_CHAR           '&'
 #define GET_ARG             '#'
+#define GET_RET             '$'
+
+#define DEBUG_CHAR          '?'
 
 typedef struct {
     char*         buffer;

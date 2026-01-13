@@ -1,22 +1,55 @@
+/ Sum function
+  Params:
+  - [0] A.
+  - [1] B.
+
+  Returns the sum of these arguments.
+  /
+^e
+r
+  #0>#1   / load arguments      /
+  [-<+>]< / sum in the ret cell /
+!
+e
+
 / Function to print a character.
   Params:
-  - [0] Character number.
+  - [0] Base offset.
+  - [1] Second offset.
+  - [2] Second offset multiplier.
    /
 ^q
 w
-  #0            / load the base offset      /
-  >++++++++     / In the second cell set 8  /
+  #1>#1>#2
   [
-      <++++++++ / + 8 to the base offset    /
+      <<0>1&r$
       >-
-  ]
-  <.            / stdout                    /
+  ] 
+  <<
+  #00>1&r$ 
+  .
 !
 q
 
-*++0   / B       /
-&w     / w('B'); /
-*+++0  / C       /
-&w     / w('C'); /
-*++++0 / D       /
-&w     / w('D'); /
+/ Letters setup /
+*+++++++2+1
+
+*++++++++0 
+&w         / H /
+---0
+&w         / E /
++++++++0
+&w&w       / LL /
++++0
+&w         / O /
+
+
+/ Spec Symbols setup /
+*++++++++++2*+++1
+*0
+&w
+
+/ Spec Symbols setup /
+*12
+*++++++++++0
+&w

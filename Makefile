@@ -21,7 +21,7 @@ CFLAGS += \
 	-Wpedantic \
 	-Wshadow \
 	-Wconversion \
-	# -DDEBUG
+	-DDEBUG
 
 LDFLAGS := -flto
 
