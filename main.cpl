@@ -1,0 +1,21 @@
+#include <stdio_h.cpl>
+
+@[entry("main")] @[abi]
+start(i32 argc, ptr ptr i8 argv) {
+    if argc < 2; {
+        fprintf(stderr, ref "You must provide the target file: ./%s <path>\n", argv[0]);
+        exit 1;
+    }
+
+    ptr FILE fp = fopen(argv[1], ref "r");
+    if not fp; {
+        fprintf(stderr, ref "File '%s' isn't found!\n", argv[1]);
+        exit 1;
+    }
+    else {
+        fprintf(stderr, ref "File '%s' is found!\n", argv[1]);
+    }
+
+    fclose(fp);
+    exit 0;
+}
