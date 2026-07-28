@@ -1,0 +1,53 @@
+#ifndef INTERPRETER_H_
+#define INTERPRETER_H_ 0
+
+#include <stdio_h.cpl>
+#include <stdlib_h.cpl>
+#include <unistd_h.cpl>
+#include "token_h.cpl"
+
+#define LINE_SIZE   10000
+#define LABELS_SIZE 26
+#define SCOPE_STACK 10
+
+container io {
+    function putc(i32 c) -> i32;
+    function getc() -> i32;
+}
+
+container func {
+    :/ Basic function information /:
+    i64 raddr;
+    arr args[10, i32];
+    i32 ret;
+
+    :/ Data tape information      /:
+    i32 pos;
+    arr line[LINE_SIZE, i32];
+
+    @[self]
+    function clear(ptr func self) -> i0;
+}
+
+container interpret {
+    token_line tokenizer;
+
+    u64        code_size;
+    arr        code[LINE_SIZE, i8];
+    arr        brackets[LINE_SIZE, i64];
+    arr        bracket_stack[LINE_SIZE, i64];
+    arr        labels[LABELS_SIZE, i64];
+
+    i32        func_scope;
+    arr        funcs[SCOPE_STACK, func];
+
+    i32        jmp;
+    i8         jmp_active;
+    i8         cmt;
+
+    @[self] function init(ptr interpret self) -> i0;
+    @[self] function setup(ptr interpret self) -> i0;
+    @[self] function interpret(ptr interpret self) -> i0;
+}
+
+#endif

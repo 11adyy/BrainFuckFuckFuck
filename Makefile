@@ -1,7 +1,11 @@
-CC      := gcc
-TARGET  := out
-SRC     := main.c src/*
-INCLUDE := include
+UNAME_S    := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+UNAME_M    := $(shell uname -m)
+CPLC       ?= ../ExampleCompiler/builds/$(UNAME_S)-$(UNAME_M)/cplc
+TARGET     := out
+CPL_TARGET := out-cpl
+SRC        := main.c src/token.c src/interpreter.c
+CPL_SRC    := main.cpl src/token.cpl src/interpreter.cpl
+INCLUDE    := include
 
 CFLAGS := \
 	-O3 \
@@ -27,12 +31,12 @@ LDFLAGS := -flto
 
 .PHONY: all clean rebuild
 
-all: $(TARGET)
+all: $(CPL_TARGET)
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
+$(CPL_TARGET): $(CPL_SRC) include/token_h.cpl include/interpreter_h.cpl
+	$(CPLC) -I $(INCLUDE) --output $(CPL_TARGET) $(CPL_SRC)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(CPL_TARGET)
 
 rebuild: clean all

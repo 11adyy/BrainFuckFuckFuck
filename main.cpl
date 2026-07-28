@@ -1,21 +1,63 @@
-#include <stdio_h.cpl>
+#include "include/interpreter_h.cpl"
 
-@[entry("main")] @[abi]
+@[section(".bss")] glob interpret inter;
+
+function bfpp_strlen(ptr i8 text) -> u64 {
+    u64 len = 0 as u64;
+    while text[len] != 0; {
+        len += 1 as u64;
+    }
+
+    return len;
+}
+
+function bfpp_write(i32 fd, ptr i8 text) -> i0 {
+    i64 ignored = write(fd, text as ptr i0, bfpp_strlen(text));
+}
+
+function bfpp_close(ptr FILE fp) -> i0 {
+    i32 ignored = fclose(fp);
+}
+
+function bfpp_missing_arg(ptr i8 program) -> i0 {
+    bfpp_write(2 as i32, ref "You must provide the target file: ./");
+    bfpp_write(2 as i32, program);
+    bfpp_write(2 as i32, ref " <path>\n");
+}
+
+function bfpp_missing_file(ptr i8 path) -> i0 {
+    bfpp_write(2 as i32, ref "File '");
+    bfpp_write(2 as i32, path);
+    bfpp_write(2 as i32, ref "' isn't found!\n");
+}
+
 start(i32 argc, ptr ptr i8 argv) {
     if argc < 2; {
-        fprintf(stderr, ref "You must provide the target file: ./%s <path>\n", argv[0]);
+        bfpp_missing_arg(argv[0]);
         exit 1;
     }
 
     ptr FILE fp = fopen(argv[1], ref "r");
     if not fp; {
-        fprintf(stderr, ref "File '%s' isn't found!\n", argv[1]);
+        bfpp_missing_file(argv[1]);
         exit 1;
     }
-    else {
-        fprintf(stderr, ref "File '%s' is found!\n", argv[1]);
+
+    inter.init();
+
+    inter.code_size = fread(inter.code as ptr i0, 1 as u64, LINE_SIZE as u64, fp);
+    if inter.code_size <= 0; {
+        bfpp_close(fp);
+        exit 1;
+    }
+    if inter.code_size > LINE_SIZE as u64; {
+        bfpp_close(fp);
+        exit 2;
     }
 
-    fclose(fp);
+    inter.setup();
+    inter.interpret();
+
+    bfpp_close(fp);
     exit 0;
 }

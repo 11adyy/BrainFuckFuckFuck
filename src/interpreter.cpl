@@ -1,0 +1,229 @@
+#include "../include/interpreter_h.cpl"
+
+function io::putc(i32 c) -> i32 {
+    i8 ch = c as i8;
+    write(1 as i32, (ref ch) as ptr i0, 1 as u64) as i32
+}
+
+function io::getc() -> i32 {
+    i8 ch = 0;
+    if read(0 as i32, (ref ch) as ptr i0, 1 as u64) <= 0; {
+        return -1;
+    }
+
+    ch as i32
+}
+
+function bfpp_is_label(i32 c) -> i8 {
+    (c >= 'a' && c <= 'z') as i8
+}
+
+function bfpp_is_digit(i32 c) -> i8 {
+    (c >= '0' && c <= '9') as i8
+}
+
+function bfpp_label_index(i32 c) -> i32 {
+    c - 'a'
+}
+
+function bfpp_digit_index(i32 c) -> i32 {
+    c - '0'
+}
+
+function bfpp_register_label(ptr interpret self, i32 curr) -> i0 {
+    if not bfpp_is_label(curr); {
+        return;
+    }
+
+    i32 idx = bfpp_label_index(curr);
+    if self.labels[idx] < 0; {
+        self.labels[idx] = self.tokenizer.pos;
+    }
+}
+
+function func::clear(ptr func self) -> i0 {
+    self.raddr = 0 as i64;
+    self.ret   = 0;
+    self.pos   = 0;
+
+    i32 idx = 0;
+    while idx < 10; {
+        self.args[idx] = 0;
+        idx += 1;
+    }
+
+    idx = 0;
+    while idx < LINE_SIZE; {
+        self.line[idx] = 0;
+        idx += 1;
+    }
+}
+
+function interpret::init(ptr interpret self) -> i0 {
+    self.code_size  = 0 as u64;
+    self.func_scope = 0;
+    self.jmp        = 0;
+    self.jmp_active = 0;
+    self.cmt        = 0;
+
+    self.tokenizer.set(0 as ptr i8, 0 as u64);
+
+    i32 idx = 0;
+    while idx < LINE_SIZE; {
+        self.code[idx]          = 0 as i8;
+        self.brackets[idx]      = 0 as i64;
+        self.bracket_stack[idx] = 0 as i64;
+        idx += 1;
+    }
+
+    idx = 0;
+    while idx < LABELS_SIZE; {
+        self.labels[idx] = -1;
+        idx += 1;
+    }
+
+    idx = 0;
+    while idx < SCOPE_STACK; {
+        self.funcs[idx].clear();
+        idx += 1;
+    }
+}
+
+function interpret::setup(ptr interpret self) -> i0 {
+    i32 idx = 0;
+    while idx < LABELS_SIZE; {
+        self.labels[idx] = -1;
+        idx += 1;
+    }
+
+    i32 stack_pos = 0;
+
+    idx = 0;
+    while idx < self.code_size as i32; {
+        @[no_fall]
+        @[straight]
+        switch self.code[idx]; {
+            case LOOP_INIT_CHAR; {
+                self.bracket_stack[stack_pos] = idx as i64;
+                stack_pos += 1;
+            }
+            case LOOP_CLOSE_CHAR; {
+                if stack_pos > 0; {
+                    stack_pos -= 1;
+                    i64 open_pos = self.bracket_stack[stack_pos];
+                    self.brackets[idx] = open_pos;
+                    self.brackets[open_pos] = idx as i64;
+                }
+            }
+        }
+
+        idx += 1;
+    }
+}
+
+function interpret::interpret(ptr interpret self) -> i0 {
+    self.tokenizer.set(self.code, self.code_size);
+
+    i32 curr = self.tokenizer.next();
+    while curr >= 0; {
+        if curr == COMMENT_CHAR; {
+            self.cmt = (not self.cmt) as i8;
+        }
+        else {
+            if not self.cmt; {
+                if self.jmp_active; {
+                    bfpp_register_label(self, curr);
+
+                    if bfpp_is_label(curr) as i32 && bfpp_label_index(curr) == self.jmp; {
+                        self.jmp_active = 0;
+                    }
+                }
+                else {
+                    ptr func cfunc = self.funcs[self.func_scope];
+                    i8 default_path = 0;
+
+                    @[no_fall]
+                    switch curr; {
+                        case MOVEL_CARRIAGE_CHAR; { cfunc.pos -= 1; }
+                        case MOVER_CARRIAGE_CHAR; { cfunc.pos += 1; }
+                        case STDOUT_CHAR; { io::putc(cfunc.line[cfunc.pos]) as i0; }
+                        case STDIN_CHAR; { cfunc.line[cfunc.pos] = io::getc(); }
+                        case INCREMENT_CHAR; { cfunc.line[cfunc.pos] += 1; }
+                        case DECREMENT_CHAR; { cfunc.line[cfunc.pos] -= 1; }
+                        case RESET_CELL; { cfunc.line[cfunc.pos] = 0; }
+                        case GET_RET; { cfunc.line[cfunc.pos] = cfunc.ret; }
+                        case LOOP_INIT_CHAR; {
+                            if not cfunc.line[cfunc.pos]; {
+                                self.tokenizer.pos = self.brackets[self.tokenizer.pos];
+                            }
+                        }
+                        case LOOP_CLOSE_CHAR; {
+                            if cfunc.line[cfunc.pos]; {
+                                self.tokenizer.pos = self.brackets[self.tokenizer.pos];
+                            }
+                        }
+                        case TERMINATE_CHAR; {
+                            if self.func_scope <= 0; {
+                                return;
+                            }
+
+                            self.funcs[self.func_scope - 1].ret = cfunc.line[cfunc.pos];
+                            self.tokenizer.pos = self.funcs[self.func_scope - 1].raddr;
+                            self.func_scope -= 1;
+                            self.funcs[self.func_scope].raddr = 0 as i64;
+                        }
+                        case JUMP_CHAR; {
+                            curr = self.tokenizer.next();
+                            if bfpp_is_label(curr); {
+                                i32 idx = bfpp_label_index(curr);
+                                if self.labels[idx] >= 0; {
+                                    self.tokenizer.pos = self.labels[idx];
+                                }
+                                else {
+                                    self.jmp = idx;
+                                    self.jmp_active = 1;
+                                }
+                            }
+                        }
+                        case CALL_CHAR; {
+                            curr = self.tokenizer.next();
+                            if 
+                                bfpp_is_label(curr) &&
+                                self.func_scope + 1 < SCOPE_STACK; 
+                            {
+                                i32 idx = bfpp_label_index(curr);
+                                if self.labels[idx] >= 0; {
+                                    self.funcs[self.func_scope].raddr = self.tokenizer.pos;
+                                    self.func_scope += 1;
+                                    self.tokenizer.pos = self.labels[idx];
+                                }
+                            }
+                        }
+                        case GET_ARG; {
+                            curr = self.tokenizer.next();
+                            if 
+                                self.func_scope > 0 &&
+                                bfpp_is_digit(curr) as i32;
+                            {
+                                cfunc.line[cfunc.pos] = self.funcs[self.func_scope - 1].args[bfpp_digit_index(curr)];
+                            }
+                        }
+                        default {
+                            default_path = 1;
+                        }
+                    }
+
+                    if default_path; {
+                        if bfpp_is_digit(curr); {
+                            self.funcs[self.func_scope].args[bfpp_digit_index(curr)] = cfunc.line[cfunc.pos];
+                        }
+
+                        bfpp_register_label(self, curr);
+                    }
+                }
+            }
+        }
+
+        curr = self.tokenizer.next();
+    }
+}
