@@ -16,7 +16,7 @@ start(i32 argc, ptr ptr i8 argv) {
 
     inter.init();
 
-    inter.code_size = fread(inter.code as ptr i0, 1 as u64, LINE_SIZE as u64, fp);
+    inter.code_size = fread(ref inter.code, 1 as u64, LINE_SIZE as u64, fp);
     if inter.code_size <= 0; {
         close(fp);
         exit 1;

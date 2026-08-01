@@ -1,8 +1,7 @@
 #include "../include/interpreter_h.cpl"
 
 function io::putc(i32 c) -> i32 {
-    i8 ch = c as i8;
-    write(1 as i32, (ref ch) as ptr i0, 1 as u64) as i32
+    write(1 as i32, (ref c) as ptr i0, 1 as u64) as i32
 }
 
 function io::getc() -> i32 {
@@ -14,28 +13,9 @@ function io::getc() -> i32 {
     ch as i32
 }
 
-function bfpp_is_label(i32 c) -> i8 {
-    (c >= 'a' && c <= 'z') as i8
-}
-
-function bfpp_is_digit(i32 c) -> i8 {
-    (c >= '0' && c <= '9') as i8
-}
-
-function bfpp_label_index(i32 c) -> i32 {
-    c - 'a'
-}
-
-function bfpp_digit_index(i32 c) -> i32 {
-    c - '0'
-}
-
-function bfpp_register_label(ptr interpret self, i32 curr) -> i0 {
-    if not bfpp_is_label(curr); {
-        return;
-    }
-
-    i32 idx = bfpp_label_index(curr);
+function _register_label(ptr interpret self, i32 curr) -> i0 {
+    if not char::is_label(curr); return;
+    i32 idx = char::label_index(curr);
     if self.labels[idx] < 0; {
         self.labels[idx] = self.tokenizer.pos;
     }
@@ -122,7 +102,7 @@ function interpret::setup(ptr interpret self) -> i0 {
 }
 
 function interpret::interpret(ptr interpret self) -> i0 {
-    self.tokenizer.set(self.code, self.code_size);
+    self.tokenizer.set(ref self.code, self.code_size);
 
     i32 curr = self.tokenizer.next();
     while curr >= 0; {
@@ -132,14 +112,14 @@ function interpret::interpret(ptr interpret self) -> i0 {
         else {
             if not self.cmt; {
                 if self.jmp_active; {
-                    bfpp_register_label(self, curr);
+                    _register_label(self, curr);
 
-                    if bfpp_is_label(curr) as i32 && bfpp_label_index(curr) == self.jmp; {
+                    if char::is_label(curr) as i32 && char::label_index(curr) == self.jmp; {
                         self.jmp_active = 0;
                     }
                 }
                 else {
-                    ptr func cfunc = self.funcs[self.func_scope];
+                    ptr func cfunc = ref self.funcs[self.func_scope];
                     i8 default_path = 0;
 
                     @[no_fall]
@@ -174,8 +154,8 @@ function interpret::interpret(ptr interpret self) -> i0 {
                         }
                         case JUMP_CHAR; {
                             curr = self.tokenizer.next();
-                            if bfpp_is_label(curr); {
-                                i32 idx = bfpp_label_index(curr);
+                            if char::is_label(curr); {
+                                i32 idx = char::label_index(curr);
                                 if self.labels[idx] >= 0; {
                                     self.tokenizer.pos = self.labels[idx];
                                 }
@@ -188,10 +168,10 @@ function interpret::interpret(ptr interpret self) -> i0 {
                         case CALL_CHAR; {
                             curr = self.tokenizer.next();
                             if 
-                                bfpp_is_label(curr) &&
+                                char::is_label(curr) &&
                                 self.func_scope + 1 < SCOPE_STACK; 
                             {
-                                i32 idx = bfpp_label_index(curr);
+                                i32 idx = char::label_index(curr);
                                 if self.labels[idx] >= 0; {
                                     self.funcs[self.func_scope].raddr = self.tokenizer.pos;
                                     self.func_scope += 1;
@@ -203,9 +183,9 @@ function interpret::interpret(ptr interpret self) -> i0 {
                             curr = self.tokenizer.next();
                             if 
                                 self.func_scope > 0 &&
-                                bfpp_is_digit(curr) as i32;
+                                char::is_digit(curr);
                             {
-                                cfunc.line[cfunc.pos] = self.funcs[self.func_scope - 1].args[bfpp_digit_index(curr)];
+                                cfunc.line[cfunc.pos] = self.funcs[self.func_scope - 1].args[char::digit_index(curr)];
                             }
                         }
                         default {
@@ -214,11 +194,11 @@ function interpret::interpret(ptr interpret self) -> i0 {
                     }
 
                     if default_path; {
-                        if bfpp_is_digit(curr); {
-                            self.funcs[self.func_scope].args[bfpp_digit_index(curr)] = cfunc.line[cfunc.pos];
+                        if char::is_digit(curr); {
+                            self.funcs[self.func_scope].args[char::digit_index(curr)] = cfunc.line[cfunc.pos];
                         }
 
-                        bfpp_register_label(self, curr);
+                        _register_label(self, curr);
                     }
                 }
             }

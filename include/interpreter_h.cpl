@@ -10,6 +10,28 @@
 #define LABELS_SIZE 26
 #define SCOPE_STACK 10
 
+container char {
+    @[inline(always)]
+    function is_label(i32 c) -> i8 {
+        (c >= 'a' && c <= 'z') as i8
+    }
+
+    @[inline(always)]
+    function is_digit(i32 c) -> i8 {
+        (c >= '0' && c <= '9') as i8
+    }
+
+    @[inline(always)]
+    function label_index(i32 c) -> i32 {
+        c - 'a'
+    }
+
+    @[inline(always)]
+    function digit_index(i32 c) -> i32 {
+        c - '0'
+    }
+}
+
 container io {
     function putc(i32 c) -> i32;
     function getc() -> i32;
