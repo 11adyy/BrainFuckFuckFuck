@@ -2,8 +2,8 @@ UNAME_S    := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 UNAME_M    := $(shell uname -m)
 CPLC       ?= cplc
 PYTHON     ?= python3
-CPL_TARGET := out-cpl
-CPLC_FLAGS ?= -O3 --entry-name _start --linker-mode driver --linker gcc --linker-no-pie -Xlinker -nostartfiles
+CPL_TARGET := a.out
+CPLC_FLAGS ?= -O3 --linker-mode driver --linker gcc --linker-no-pie -Xlinker -nostartfiles
 CPL_SRC    := main.cpl src/token.cpl src/interpreter.cpl
 INCLUDE    := include
 

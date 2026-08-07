@@ -32,11 +32,6 @@ container char {
     }
 }
 
-container io {
-    function putc(i32 c) -> i32;
-    function getc() -> i32;
-}
-
 container func {
     :/ Basic function information /:
     i64 raddr;
